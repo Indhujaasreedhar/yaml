@@ -1,0 +1,2048 @@
+openapi: 3.0.3
+info:
+  title: Authorization APIs
+  version: '1.0'
+  description: >-
+    Applications, services, and authorizers use the Authorization APIs to
+    receive the PlainID Access Decision from the PDP
+  contact:
+    name: PlainID
+    url: 'https://plainid.com'
+    email: contact@plainid.com
+  termsOfService: 'https://plainid.com/terms'
+  license:
+    name: Commercial
+    url: 'https://plainid.com/license'
+servers:
+  - description: United States
+    url: 'https://tenant-name.us1.plainid.io'
+  - description: Europe
+    url: 'https://tenant-name.eu1.plainid.io'
+  - description: Canada
+    url: 'https://tenant-name.ca1.plainid.io'
+  - description: Local PAA
+    url: 'https://your-paa.acme.local'
+tags:
+  - name: runtime
+    description: runtime
+paths:
+  /api/runtime/permit-deny/v3:
+    post:
+      tags:
+        - runtime
+      summary: Permit Deny
+      operationId: PermitDeny
+      responses:
+        '200':
+          description: User gets a Permit decision
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    result: DENY
+                    response:
+                      - allowed:
+                          - path: AS-XX-12575
+                            action: Access
+                            template: Accounts
+                        denied:
+                          - path: AS-XX-1257566
+                            action: Access
+                            template: Accounts
+                        not_applicable: []
+                properties:
+                  result:
+                    type: string
+                  response:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        allowed:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              path:
+                                type: string
+                              action:
+                                type: string
+                              template:
+                                type: string
+                        denied:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              path:
+                                type: string
+                              action:
+                                type: string
+                              template:
+                                type: string
+                        not_applicable:
+                          type: array
+                          items:
+                            type: object
+                required:
+                  - result
+              examples:
+                Permit:
+                  value:
+                    result: PERMIT
+                Deny:
+                  value:
+                    result: DENY
+                Permit with details:
+                  value:
+                    result: PERMIT
+                    response:
+                      - allowed:
+                          - path: AS-XX-12575
+                            action: Access
+                            template: Accounts
+                        denied: []
+                        not_applicable: []
+                Deny with details:
+                  value:
+                    result: DENY
+                    response:
+                      - allowed: []
+                        denied:
+                          - path: AS-XX-12575
+                            action: Access1
+                            template: Accounts
+                        not_applicable: []
+                Combined permit deny:
+                  value:
+                    result: DENY
+                    response:
+                      - allowed:
+                          - path: AS-XX-12575
+                            action: Access
+                            template: Accounts
+                        denied:
+                          - path: AS-XX-1257566
+                            action: Access
+                            template: Accounts
+                        not_applicable: []
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '501':
+          description: Not Implemented
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityId:
+                  type: string
+                  description: Unique identifier of the Identity (e.g. UID)
+                clientId:
+                  type: string
+                  description: Client ID of the Scope
+                clientSecret:
+                  type: string
+                  description: Client Secret ID of the Scope
+                listOfResources:
+                  description: >-
+                    Contains a list of the Asset's unique identifiers:
+
+
+                    · Resource type (required)
+
+
+                    · Resources - Action (required), Path (required), and Asset
+                    Attributes (optional)
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      resourceType:
+                        type: string
+                        description: Asset Template ID
+                      resources:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            action:
+                              type: string
+                              description: Name of the Action
+                            path:
+                              type: string
+                              description: Unique Identifier of the Asset
+                            assetAttributes:
+                              type: object
+                              properties:
+                                attribute_1:
+                                  type: array
+                                  items:
+                                    type: string
+                                attribute_2:
+                                  type: array
+                                  items:
+                                    type: string
+                          required:
+                            - action
+                            - path
+                entityTypeId:
+                  type: string
+                  description: Identity Template ID
+                entityAttributes:
+                  type: object
+                  properties:
+                    user_organization:
+                      type: array
+                      items:
+                        type: string
+                    user_title:
+                      type: array
+                      items:
+                        type: string
+                    user_business_unit:
+                      type: array
+                      items:
+                        type: string
+                    User_Location:
+                      type: array
+                      items:
+                        type: string
+                contextData:
+                  description: >-
+                    Identity Context data for this request.
+
+
+                    When specifying this parameter, you are requesting
+                    information based on a specific parameter and its value.
+
+
+                    For example:
+
+                    Location where the contextData equals a specific branch.
+
+
+                    If not defined, Dynamic Groups based on context data will
+                    not be considered in the Access Decision.
+                  type: object
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                environment:
+                  type: object
+                  description: >-
+                    Environmental parameters need to be defined in Policies as a
+                    request (in Asset Rules or Conditions) and sent in the
+                    authorization request. Only the Assets that match the
+                    parameters in request will be returned.
+
+
+                    If not defined, parameters based on Environmental data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                remoteIp:
+                  type: string
+                  minLength: 1
+                  description: >-
+                    IP address to be used when validating a policy.
+
+                    If not defined, the IP considered in the calculation is
+                    taken from the X-Forwarded-For (Request header)
+                timeZoneOffset:
+                  type: number
+                  description: |-
+                    To define the offset from UTC time zone.
+                    Used in Time Condition.
+                  default: 0
+                includeDetails:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Show/hide a detailed list of Resources that are allowed,
+                    denied, and not applicable.
+                includeContext:
+                  type: boolean
+                  default: false
+                  description: Show/hide the context data in the response.
+                includeAccessPolicy:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Show/hide the name of the Policy in the response that
+                    granted the specified access.
+                includeAssetAttributes:
+                  type: boolean
+                  default: false
+                  description: Show/hide the asset attribute of the assets in the response.
+                includeDenyReason:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Include/exclude the reason for denying access to an Asset.
+                    <br> For more details on Deny Reason, click
+                    [here](https://docs.plainid.io/apidocs/working-with-deny-reason)
+                includeIdentity:
+                  type: boolean
+                  default: false
+                  description: >-
+                    Show/hide the Identity attribute of the Identity in the
+                    response.
+                accessTokenFormat:
+                  type: string
+                  default: JSON/JWT
+                  description: >-
+                    Determines the format of the response – whether `JSON`,
+                    `JWT`, or `StandardJWT`.
+                useCache:
+                  type: boolean
+                  default: true
+                  description: >-
+                    The attribute will determine if the response is going to
+                    consider the cache settings or override the cache and
+                    perform a full calculation.
+                prefetch:
+                  type: boolean
+                  default: false
+                  description: >
+                    Fetches the Asset Attribute based on the Asset ID at the
+                    beginning of the Access Decision calculation.
+                operationalFilters:
+                  type: array
+                  description: >-
+                    These operational filters should affect the Runtime behavior and results by applying additional filtering which is not directly related to Authorization logic.
+                  items:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/identitySourcesFilterByIDs'
+                    discriminator:
+                      propertyName: filterType
+              required:
+                - entityId
+                - clientId
+                - clientSecret
+                - listOfResources
+            examples:
+              PermitDeny:
+                value:
+
+                  entityId: uid838277
+                  clientId: PDASDASDASDASDASDF40
+                  clientSecret: k3DSBn5vTJuNzcar0Cpb0wICar34QwYQCat4OMay
+                  entityAttributes:
+                    user_organization:
+                      - Acme Finance
+                    user_title:
+                      - Branch Clerk
+                    user_business_unit:
+                      - LOB1
+                    User_Location:
+                      - US
+                  responseType: accessDecision
+                  listOfResources:
+                    - resourceType: Client Profiles
+                      resources:
+                        - action: Read
+                          path: P4
+                          assetAttributes:
+                            attribute_1:
+                              - string
+                            attribute_2:
+                              - string
+        description: ''
+      description: >-
+        The Permit/Deny API call is a Yes/No authorization question. It returns
+        a response to Access Decision-related responses to a specific question
+        detailed in the API Request. It can also optionally return additional
+        information.
+        
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li><li><b>Local PAA</b> - `https://your-paa.acme.local`</li>
+    parameters: []
+  /api/runtime/token/v3:
+    post:
+      tags:
+        - runtime
+      summary: User Access Token
+      operationId: UserAccessTokenPOST
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokenValidity:
+                    type: integer
+                  response:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        access:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              path:
+                                type: string
+                              attributes:
+                                type: object
+                                properties:
+                                  account_number:
+                                    type: array
+                                    items:
+                                      type: string
+                                  state:
+                                    type: array
+                                    items:
+                                      type: string
+                                  balance:
+                                    type: array
+                                    items:
+                                      type: integer
+                                  type:
+                                    type: array
+                                    items:
+                                      type: string
+                                  customer_type:
+                                    type: array
+                                    items:
+                                      type: string
+                                  order_type:
+                                    type: array
+                                    items:
+                                      type: string
+                              resourceTypes:
+                                type: string
+                              actions:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    action:
+                                      type: string
+                        contextData:
+                          type: object
+                          properties:
+                            branch_id:
+                              type: array
+                              items:
+                                type: string
+                        privileges:
+                          type: object
+                          properties:
+                            allowed:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  resourceTypes:
+                                    type: string
+                                  actions:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        action:
+                                          type: string
+                                        asset-attributes-filter:
+                                          type: object
+                                          properties:
+                                            OR:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  OR:
+                                                    type: array
+                                                    items:
+                                                      type: object
+                                                      properties:
+                                                        AND:
+                                                          type: array
+                                                          items:
+                                                            type: object
+                                                            properties:
+                                                              attribute:
+                                                                type: string
+                                                              type:
+                                                                type: string
+                                                              operator:
+                                                                type: string
+                                                              values:
+                                                                type: array
+                                                                items:
+                                                                  type: string
+                                                              match:
+                                                                type: string
+                                                            required:
+                                                              - attribute
+                                                              - type
+                                                              - operator
+                                                              - values
+                                                              - match
+                                                      required:
+                                                        - AND
+                                                required:
+                                                  - OR
+                                          required:
+                                            - OR
+                                      required:
+                                        - action
+                                        - asset-attributes-filter
+                                required:
+                                  - resourceTypes
+                                  - actions
+                x-examples:
+                  Example 1:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: Transfer_Bank_US
+                            attributes:
+                              account_number:
+                                - us123353
+                              state:
+                                - US
+                              balance:
+                                - 7000
+                              type:
+                                - private
+                            resourceType: Bank_Accounts
+                            actions:
+                              - action: approve
+                          - path: /orders
+                            attributes:
+                              customer_type:
+                                - private
+                              order_type:
+                                - credit card
+                            resourceType: Orders
+                            actions:
+                              - action: approve
+                        contextData:
+                          branch_id:
+                            - '512'
+                        privileges: null
+              examples:
+                Default Response:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: 27iX3j
+                            attributes:
+                              Path:
+                                - 27iX3j
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 72xQ9i
+                            attributes:
+                              Path:
+                                - 72xQ9i
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 05mZ1f
+                            attributes:
+                              Path:
+                                - 05mZ1f
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                    contextData: null
+                includeAccessPolicy:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: 27iX3j
+                            attributes:
+                              Path:
+                                - 27iX3j
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - permission: Manage consumers accounts in branch
+                                action: View
+                          - path: 72xQ9i
+                            attributes:
+                              Path:
+                                - 72xQ9i
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - permission: Manage consumers accounts in branch
+                                action: View
+                          - path: 05mZ1f
+                            attributes:
+                              Path:
+                                - 05mZ1f
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - permission: Manage consumers accounts in branch
+                                action: View
+                    contextData: null
+                includeAssetAttributes - False:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: 27iX3j
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 72xQ9i
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 05mZ1f
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                        contextData: {}
+                includeIdentity:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: 27iX3j
+                            attributes:
+                              Path:
+                                - 27iX3j
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 72xQ9i
+                            attributes:
+                              Path:
+                                - 72xQ9i
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 05mZ1f
+                            attributes:
+                              Path:
+                                - 05mZ1f
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                    identity:
+                      type: 02a89b66-0a15-4b8e-be6d-84cb99da9b13
+                      typeName: User
+                      attributes:
+                        First_Name:
+                          - Araldo
+                        uid:
+                          - xB724129
+                        User_Branch:
+                          - San Jose
+                        Last_Name:
+                          - Baudou
+                        ID:
+                          - xB724129
+                        title:
+                          - Teller
+                        User_Type:
+                          - Internal
+                    contextData: null
+                includeContext:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access:
+                          - path: 27iX3j
+                            attributes:
+                              Path:
+                                - 27iX3j
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 72xQ9i
+                            attributes:
+                              Path:
+                                - 72xQ9i
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceType: Bank Accounts
+                            actions:
+                              - action: View
+                          - path: 05mZ1f
+                            attributes:
+                              Path:
+                                - 05mZ1f
+                              Account Type:
+                                - private
+                              Account Branch:
+                                - San Jose
+                            resourceTypes: Bank Accounts
+                            actions:
+                              - action: View
+                    contextData:
+                      partner_id: 724f9f9b-af24-42fc-b97d-b399042ef00d
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                400 Bad Request:
+                  value:
+                    bank_users1 is not a valid identity type: null
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                401 Unauthorized - MissingSecret:
+                  value:
+                    Missing secret: null
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                403 Forbidden - InvalidSecret:
+                  value:
+                    Invalid secret: null
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                '500 - Request ':
+                  value:
+                    Asset provider is missing in config: Accounts
+        '501':
+          $ref: '#/components/responses/generic_error'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                example-1:
+                  entityId: string
+                  clientId: string
+                  clientSecret: string
+                  responseType: string
+                  listOfResources:
+                    - array: null
+                  resourceTypes:
+                    - array: null
+                  action: string
+                  path: string
+                  entityTypeId: string
+                  entityAttributes:
+                    - array: null
+                  contextData: null
+                  environment:
+                    '{array}':
+                      - list: null
+                  remoteIp: string
+                  timeZoneOffset: 0
+                  includeDetails: false
+                  includeIdentity: false
+                  includeAccessPolicy: false
+                  includeAssetAttributes: false
+                  accessTokenFormat: JSON
+                  useCache: true
+              properties:
+                entityId:
+                  type: string
+                  minLength: 1
+                  description: Unique identifier of the Identity
+                clientId:
+                  type: string
+                  minLength: 1
+                  description: Client ID of the Scope
+                clientSecret:
+                  type: string
+                  minLength: 1
+                  description: Client Secret ID of the Scope
+                entityTypeId:
+                  type: string
+                  minLength: 1
+                  description: Identity Template ID
+                entityAttributes:
+                  type: object
+                  description: >-
+                    List of Identity Attributes and their values.
+
+
+                    If not defined, Dynamic groups based on virtual attributes
+                    will not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                contextData:
+                  type: object
+                  description: >-
+                    Identity Context data for this request.
+
+
+                    When specifying this parameter, you are requesting
+                    information based on a specific parameter and its value.
+
+
+                    For example, Location where the contextData equals a
+                    specific branch.
+
+
+                    If not defined, Dynamic groups based on context data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                environment:
+                  type: object
+                  description: >-
+                    Environmental parameters need to be defined in policies as
+                    request.<name> (in asset rules or conditions) and also sent
+                    in the authorization request. Only the assets that match
+                    what will be sent in the request will come back.
+
+
+                    If not defined, parametes based on emviromental data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                remoteIp:
+                  type: string
+                  minLength: 1
+                  description: >-
+                    IP address to be used when validating the policy.
+
+
+                    If not defined, the IP considered in the calculation is
+                    taken from the X-Forwarded-For (Request header)
+                  format: ipv4
+                timeZoneOffset:
+                  type: number
+                  description: |-
+                    To define the offset from UTC time zone.
+                    Used in Time Condition.
+                  default: 0
+                  example: -12
+                assetList:
+                  type: object
+                  description: >-
+                    Contains a list of the Asset's unique identifier and
+                    attributes:
+                  properties:
+                    template:
+                      type: string
+                      description: Asset Template ID
+                    path:
+                      type: string
+                      description: Asset Unique Identifier
+                    assetAttribute:
+                      description: ''
+                      type: object
+                      properties:
+                        attribute_1:
+                          type: array
+                          items:
+                            type: string
+                        attribute_2:
+                          type: array
+                          items:
+                            type: string
+                resourceTypes:
+                  type: string
+                  description: >-
+                    Because the full payload of the response can be very large,
+                    this parameter enables you to decrease the payload size by
+                    including a list of Asset Types and their attributes, that
+                    will return in the response.
+
+
+                    If not specified, all resources from all resource types will
+                    be included.
+                includeContext:
+                  type: boolean
+                  description: Show/hide the context data in the response.
+                  default: false
+                includeAccessPolicy:
+                  type: boolean
+                  description: >-
+                    Show/hide the name of the Policy in the response that has
+                    granted the specified access.
+                  default: false
+                includeAssetAttributes:
+                  type: boolean
+                  description: Show/hide the asset attribute of the assets in the response.
+                  default: false
+                includeIdentity:
+                  type: boolean
+                  description: >-
+                    Show/hide the identity attribute of the identity in the
+                    response.
+                  default: false
+                accessTokenFormat:
+                  type: string
+                  description: >-
+                    Determines the format of the response – whether `JSON`,
+                    `JWT`, or `StandardJWT`.
+                  default: JSON/JWT
+
+                useCache:
+                  type: boolean
+                  description: >-
+                    The attribute will detemine if the response will consider
+                    the cache settings or override the cache and preforming full
+                    calculation.
+                  default: true
+                operationalFilters:
+                  type: array
+                  description: >-
+                    These operational filters should affect the Runtime behavior and results by applying additional filtering which is not directly related to Authorization logic.
+                  items:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/identitySourcesFilterByIDs'
+                    discriminator:
+                      propertyName: filterType
+              required:
+                - entityId
+                - clientId
+                - clientSecret
+            examples:
+              User Access Token:
+                value:
+                  entityId: string
+                  clientId: string
+                  clientSecret: string
+                  entityTypeId: string
+                  assetList:
+                    type:
+                      - template: string
+                        path: string
+                        assetAttributes:
+                          attribute_1:
+                            - string
+                          attribute_2:
+                            - string
+                  entityAttributes:
+                    string:
+                      - value
+                  contextData:
+                    string:
+                      - string
+                  environment:
+                    string:
+                      - string
+                  remoteIp: 192.168.0.1
+                  timeZoneOffset: 0
+                  resourceTypes: resource_01_name
+                  includeContext: false
+                  includeAccessPolicy: false
+                  includeAssetAttributes: false
+                  includeIdentity: false
+                  accessTokenFormat: JSON
+                  useCache: true
+        description: ''
+      description: >-
+        The User Access Token API call is an open-ended question for a specific
+        user, returning the 
+
+        list of allowed assets and their associated actions for a specific
+        application. The API presents 
+
+        a generic request based primarily on the Identity and will return all
+        requested Assets and 
+
+        Actions that are configured for this user in a single token. This API
+        enables the scope to 
+
+        cache the list of authorized Assets for a user within the Application
+        session, thus reducing the 
+
+        overall performance involved in enforcing access.
+
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li><li><b>Local PAA</b> - `https://your-paa.acme.local`</li>
+      x-internal: false
+    parameters: []
+    get:
+      tags:
+        - runtime
+      summary: User Access Token
+      operationId: UserAccessTokenGET
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '501':
+          description: Not Implemented
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: entityId
+          description: Unique identifier of the Identity
+
+        - schema:
+            type: string
+          in: query
+          name: clientId
+          description: Client ID of the Scope
+        - schema:
+            type: string
+          in: query
+          name: clientSecret
+          description: Client Secret ID of the Scope
+        - schema:
+            type: string
+          in: query
+          name: entityTypeId
+          description: Identity Template ID
+        - schema:
+            type: string
+          in: query
+          name: remoteIP
+          description: >-
+            IP address to be used when validating the policy. If not defined,
+            the IP considered in the calculation is taken from the
+            X-Forwarded-For (Request header)
+        - schema:
+            type: string
+          in: query
+          name: includeIdentity
+          description: Show/hide the identity attribute of the identity in the response.
+        - schema:
+            type: string
+          in: query
+          name: includeAssetAttributes
+          description: Show/hide the asset attribute of the assets in the response.
+        - schema:
+            type: array
+            items: {}
+          in: query
+          name: resourceTypes
+          description: >-
+            Because the full payload of the response can be very large, this
+            parameter enables you to decrease the payload size by including a
+            list of Asset Types and their attributes, that will return in the
+            response. If not specified, all resources from all resource types
+            will be included.
+
+      description: >-
+        The User Access Token API call is an open-ended question for a specific
+        user, returning the 
+
+        list of allowed assets and their associated actions for a specific
+        application. The API presents 
+
+        a generic request based primarily on the Identity and will return all
+        requested Assets and 
+
+        Actions that are configured for this user in a single token. This API
+        enables the scope to 
+
+        cache the list of authorized Assets for a user within the Application
+        session, thus reducing the 
+
+        overall performance involved in enforcing access.
+
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li><li><b>Local PAA</b> - `https://your-paa.acme.local`</li>    
+
+  /api/runtime/resolution/v3:
+    post:
+      tags:
+        - runtime
+      summary: Policy Resolution
+      operationId: PolicyResolution
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokenValidity:
+                    type: integer
+                  response:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        access:
+                          type: array
+                          items:
+                            type: object
+                            properties: {}
+                        privileges:
+                          type: object
+                          properties:
+                            allowed:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  resourceType:
+                                    type: string
+                                  actions:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        action:
+                                          type: string
+                                        asset-attributes-filter:
+                                          type: object
+                                          properties:
+                                            OR:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  OR:
+                                                    type: array
+                                                    items:
+                                                      type: object
+                                                      properties:
+                                                        AND:
+                                                          type: array
+                                                          items:
+                                                            type: object
+                                                            properties:
+                                                              attribute:
+                                                                type:                                 string
+                                                              type:
+                                                                type:                                 string
+                                                              operator:
+                                                                type:                                 string
+                                                              values:
+                                                                type: array
+                                                                items:
+                                                                  type:                               string
+                                                              match:
+                                                                type:                                 string
+                            denied:
+                              type: array
+                              items:
+                                type: object
+                                properties: {}
+                x-examples:
+                  example-1:
+                    tokenValidity: 0
+                    response:
+                      - access: []
+                        privileges:
+                          allowed:
+                            - resourceTypes: Accounts
+                              actions:
+                                - action: Access
+                                  asset-attributes-filter:
+                                    OR:
+                                      - OR:
+                                          - AND:
+                                              - attribute: location
+                                                type: STRING
+                                                operator: EQUALS
+                                                values:
+                                                  - Alabama
+                                                match: any
+                          denied: []
+              examples:
+                Policy-Resolution-200:
+                  value:
+                    tokenValidity: 0
+                    response:
+                      - access: []
+                        privileges:
+                          allowed:
+                            - resourceTypes: Accounts
+                              actions:
+                                - action: Access
+                                  asset-attributes-filter:
+                                    OR:
+                                      - OR:
+                                          - AND:
+                                              - attribute: location
+                                                type: STRING
+                                                operator: EQUALS
+                                                values:
+                                                  - Alabama
+                                                match: any
+                          denied: []
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '501':
+          description: Not Implemented
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: ''
+              type: object
+              x-examples:
+                example-1:
+                  entityTypeId: G-User
+                  clientId: PNX8XGX4ZEJFLCQTF59NR
+                  clientSecret: GTZmmSIldKPJh$GqvM*rU%E%aUO4iC%C+T5X+3FV
+                  entityId: vladi.berger@gmail.com
+                  includeAssetAttributes: true
+                  environment:
+                    table:
+                      - accounts
+              properties:
+                entityId:
+                  type: string
+                  minLength: 1
+                  description: Unique identifier of the Identity
+                clientId:
+                  type: string
+                  minLength: 1
+                  description: Client ID of the Scope
+                clientSecret:
+                  type: string
+                  minLength: 1
+                  description: Client Secret ID of the Scope
+                entityTypeId:
+                  type: string
+                  minLength: 1
+                  description: Identity Template ID
+                entityAttributes:
+                  type: array
+                  description: >-
+                    List of Identity Attributes and their values.
+
+
+                    If not defined, Dynamic groups based on virtual attriutes
+                    will not be considered in the Access Decision.
+                  items: {}
+                contextData:
+                  type: object
+                  description: >-
+                    Identity Context data for this request.
+
+                    When specifying this parameter, you are requesting
+                    information based on a specific parameter and its value.
+
+
+                    For example, Location where the contextData equals a
+                    specific branch.
+
+
+                    If not defined, Dynamic groups based on context data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      description: >-
+                        Attributes and their values used in Advanced Conditions
+                        or Request Parameters used In Asset Rules.
+                      items: {}
+                environment:
+                  type: object
+                  description: >-
+                    Environmental parameters need to be defined in policies as
+                    request.<name> (in asset rules or conditions) and also sent
+                    in the authorization request. Only the assets that match
+                    what will be sent in the request will come back.
+
+
+                    If not defined, parametes based on emviromental data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                remoteIp:
+                  type: string
+                  description: >-
+                    IP address to be used when validating the policy.
+
+
+                    If not defined, the IP considered in the calculation is
+                    taken from the X-Forwarded-For (Request header)
+                timeZoneOffset:
+                  type: number
+                  description: |-
+                    To define the offset from UTC time zone.
+                    Used in Time Condition.
+                assetList:
+                  type: object
+                  description: >-
+                    Contains a list of the Asset's unique identifier and
+                    attributes:
+                  properties:
+                    template:
+                      type: string
+                      description: Asset Template ID
+                    path:
+                      type: string
+                      description: Asset Unique Identifier
+                    assetAttribute:
+                      type: object
+                      properties:
+                        attribute_1:
+                          type: array
+                          items:
+                            type: string
+                        attribute_2:
+                          type: array
+                          items:
+                            type: string
+                resourceTypes:
+                  type: array
+                  description: >-
+                    Because the full payload of the response can be very large,
+                    this parameter enables you to decrease the payload size by
+                    including a list of Asset Types and their attributes, that
+                    will return in the response.
+
+
+                    If not specified, all resources from all resource types will
+                    be included.
+                  items: {}
+                includeContext:
+                  description: Show/hide the context data in the response.
+                  type: boolean
+                  default: false
+                includeAccessPolicy:
+                  description: >-
+                    Show/hide the name of the Policy in the response that has
+                    granted the specified access.
+                  type: boolean
+                  default: false
+                includeAssetAttributes:
+                  description: Show/hide the asset attribute of the assets in the response.
+                  type: boolean
+                  default: false
+                includeIdentity:
+                  description: >-
+                    Show/hide the identity attribute of the identity in the
+                    response.
+                  type: boolean
+                  default: false
+                accessTokenFormat:
+                  type: string
+                  description: Determines the format of the response – whether JSON or JWT.
+                useCache:
+                  description: >-
+                    The attribute will detemine if the response will consider
+                    the cache settings or override the cache and preforming full
+                    calculation.
+                  type: boolean
+                  default: true
+                operationalFilters:
+                  type: array
+                  description: >-
+                    These operational filters should affect the Runtime behavior and results by applying additional filtering which is not directly related to Authorization logic.
+                  items:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/identitySourcesFilterByIDs'
+                    discriminator:
+                      propertyName: filterType
+              required:
+                - entityId
+                - clientId
+                - clientSecret
+            examples:
+              Policy Resolution:
+                value:
+                  entityId: string
+                  clientId: string
+                  clientSecret: string
+                  entityTypeId: string
+                  assetList:
+                    type:
+                      - template: string
+                        path: string
+                        assetAttributes:
+                          attribute_1:
+                            - string
+                          attribute_2:
+                            - string
+                  entityAttributes:
+                    - string
+                  contextData:
+                    string:
+                      - string
+                  environment:
+                    string:
+                      - string
+                  remoteIp: string
+                  timeZoneOffset: 0
+                  resourceTypes:
+                    - string
+                  includeContext: false
+                  includeAccessPolicy: false
+                  includeAssetAttributes: false
+                  includeIdentity: false
+                  accessTokenFormat: string
+                  useCache: false
+        description: ''
+      description: >-
+        The Policy Resolution API enables you to create your own enforcement
+        points when need to support access to large amounts of data (SQL, search
+        engines, big data, etc.) or enforcement need to be done by another
+        system/platform. 
+
+        It is designed to answer questions like: "What access filters need to be
+        set up for a specific user to access an asset?". 
+
+        The response is expected to show the logical filtering of data and/or
+        the list of allowed data items for the user.
+
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li><li><b>Local PAA</b> - `https://your-paa.acme.local`</li>
+    parameters: []
+    get:
+      tags:
+        - runtime
+      summary: Policy Resolution
+      operationId: PolicyResolutionGET
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '501':
+          description: Not Implemented
+      description: >-
+        The Policy Resolution API enables you to create your own enforcement
+        points when need to support access to large amounts of data (SQL, search
+        engines, big data, etc.) or enforcement need to be done by another
+        system/platform. 
+
+        It is designed to answer questions like: "What access filters need to be
+        set up for a specific user to access an asset?". 
+
+        The response is expected to show the logical filtering of data and/or
+        the list of allowed data items for the user.
+
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li>
+        <li><b>Local PAA
+        Agent</b> - `https://your-paa.acme.local`</li>
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: entityId
+          description: Unique identifier of the Identity
+        - schema:
+            type: string
+          in: query
+          name: clientId
+          description: Client ID of the Scope
+        - schema:
+            type: string
+          in: query
+          name: clientSecret
+          description: Client Secret ID of the Scope
+        - schema:
+            type: string
+          in: query
+          name: entityTypeId
+          description: Identity Template ID
+        - schema:
+            type: string
+          in: query
+          name: remoteIp
+          description: >-
+            IP address to be used when validating the policy. If not defined,
+            the IP considered in the calculation is taken from the
+            X-Forwarded-For (Request header)
+        - schema:
+            type: string
+          in: query
+          name: includeIdentity
+          description: Show/hide the identity attribute of the identity in the response.
+        - schema:
+            type: string
+          in: query
+          name: includeAssetAttributes
+          description: Show/hide the asset attribute of the assets in the response.
+        - schema:
+            type: string
+          in: query
+          name: resourceTypes
+          description: >-
+            Because the full payload of the response can be very large, this
+            parameter enables you to decrease the payload size by including a
+            list of Asset Types and their attributes, that will return in the
+            response. If not specified, all resources from all resource types
+            will be included.
+  /api/runtime/userlist/v3:
+    post:
+      tags:
+        - runtime
+      summary: User List
+      operationId: UserList
+      responses:
+        '200':
+          description: OK
+
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string
+              examples:
+                users list for asset - 200:
+                  value:
+                    response:
+                      - action: Access
+                        entities:
+                          - entityType: bank_users
+                            uid: UX-12349
+                          - entityType: bank_users
+                            uid: UX-12348
+                          - entityType: bank_users
+                            uid: UX-12347
+                          - entityType: bank_users
+                            uid: UX-12346
+                          - entityType: bank_users
+                            uid: UX-12345
+                      - action: TestAction
+                        entities: []
+                includeIdentityAttributes - 200:
+                  value:
+                    response:
+                      - action: Access
+                        entities:
+                          - entityType: bank_users
+                            uid: UX-12349
+                            attributes:
+                              uid:
+                                - UX-12349
+                              location:
+                                - Alabama
+                              department:
+                                - Mortgage
+                              branch:
+                                - vitae nisl
+                          - entityType: bank_users
+                            uid: UX-12348
+                            attributes:
+                              uid:
+                                - UX-12348
+                              location:
+                                - Alabama
+                              department:
+                                - Loans
+                              branch:
+                                - varius integer
+                          - entityType: bank_users
+                            uid: UX-12347
+                            attributes:
+                              uid:
+                                - UX-12347
+                              location:
+                                - Alabama
+                              department:
+                                - Savings
+                              branch:
+                                - egestas metus
+                          - entityType: bank_users
+                            uid: UX-12346
+                            attributes:
+                              uid:
+                                - UX-12346
+                              location:
+                                - Alabama
+                              department:
+                                - Mortgage
+                              branch:
+                                - ac est
+                          - entityType: bank_users
+                            uid: UX-12345
+                            attributes:
+                              uid:
+                                - UX-12345
+                              location:
+                                - Alabama
+                              department:
+                                - Savings
+                              branch:
+                                - sapien quis
+                      - action: TestAction
+                        entities: []
+        '400':
+          description: Basic Request - 400 - Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Basic Request - 400 - Bad Request:
+                  value: {}
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+        '501':
+          description: Not Implemented
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                example-1:
+                  entityTypeId: jwt
+                  entityId: bank2
+                  clientId: PAG7XRJQCF1XCWTJAZI6Q
+                  clientSecret: 'KIEJNe6as9HbyOEEgWU,)%Q9@GY*Nr7fmB@YuYYW'
+                  entityAttributes:
+                    acr:
+                      - '1'
+                    azp:
+                      - demo
+                    branch:
+                      - '222'
+                    channel:
+                      - bank
+                    email:
+                      - bank2@demo.com
+                    email_verified:
+                      - 'true'
+                    exp:
+                      - '1642170362'
+                    iat:
+                      - '1641738362'
+                    iss:
+                      - 'https://demo.plainid.cloud/auth/realms/demo'
+                    jti:
+                      - e97fe006-5c14-4597-8339-ff707010265f
+                    preferred_username:
+                      - bank2
+                    scope:
+                      - profile email
+                    session_state:
+                      - bcc60c52-42bc-424b-82f6-ceb978cb6a70
+                    sub:
+                      - b31d9394-7e57-4161-b85a-d67cef419b95
+                    typ:
+                      - Bearer
+                    user_uuid:
+                      - '0000002'
+              properties:
+                clientId:
+                  type: string
+                  minLength: 1
+                  description: Client ID of the Scope
+                clientSecret:
+                  type: string
+                  minLength: 1
+                  description: Client Secret ID of the Scope
+                asset:
+                  type: object
+                  properties:
+                    resourceType:
+                      type: string
+                      description: Asset Template ID (required)
+                    path:
+                      type: string
+                      description: Unique Identifier of the Asset (required)
+                    actions:
+                      type: array
+                      items: {}
+                      description: Name of the Action (optional)
+                    assetAttributes:
+                      type: object
+                      description: (optional)
+                      properties:
+                        attribute_1:
+                          type: string
+                        attribute_2:
+                          type: string
+                contextData:
+                  type: object
+                  description: >-
+                    Identity Context data for this request.
+
+
+                    When specifying this parameter, you are requesting
+                    information based on a specific parameter and its value.
+
+
+                    For example, Location where the contextData equals a
+                    specific branch.
+
+
+                    If not defined, Dynamic groups based on context data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                environment:
+                  type: object
+                  description: >-
+                    Environmental parameters need to be defined in policies as
+                    request.<name> (in asset rules or conditions) and also sent
+                    in the authorization request. Only the assets that match
+                    what will be sent in the request will come back.
+
+
+                    If not defined, parameters based on environmental data will
+                    not be considered in the Access Decision.
+                  properties:
+                    string:
+                      type: array
+                      items: {}
+                remoteIp:
+                  type: string
+                  description: >-
+                    IP address to be used when validating the policy.
+
+
+                    If not defined, the IP considered in the calculation is
+                    taken from the X-Forwarded-For (Request header)
+                timeZoneOffset:
+                  type: number
+                  description: |-
+                    To define the offset from UTC time zone.
+
+                    Used in Time Condition.
+                  default: 0
+                  example: -12
+                entityTypes:
+                  type: array
+                  description: >-
+                    Because the full payload of the response can be very large,
+                    this parameter enables you to decrease the payload size by
+                    including a list of Identity Types and their attributes,
+                    that will return in the response.
+
+
+                    If not specified, all identities from all Identity Types
+                    will be included in the response.
+                  items: {}
+                includeContext:
+                  type: boolean
+                  description: Show/hide the context data in the response.
+                  default: false
+                includeAccessPolicy:
+                  type: boolean
+                  description: >-
+                    Show/hide the name of the Policy in the response that has
+                    granted the specified access.
+                  default: false
+                includeAsset:
+                  type: boolean
+                  description: >-
+                    Show/hide the asset attribute of the assets from the
+                    request.
+                  default: false
+                includeInActiveIdentities:
+                  type: boolean
+                  description: Show/hide the inactive users in the response.
+                  default: false
+                includeIdentityAttributes:
+                  type: boolean
+                  description: >-
+                    Show/hide the identity attribute of the identity in the
+                    response.
+                  default: false
+                accessTokenFormat:
+                  type: string
+                  default: JSON
+                  description: >-
+                    Determines the format of the response – whether `JSON`,
+                    `JWT`, or `StandardJWT`.
+                listOfResources:
+                  type: string
+                useCache:
+                  type: boolean
+                  description: >-
+                    The attribute will deter-mine if the response will consider
+                    the cache settings or override the cache and perform a full
+                    calculation.
+                  default: true
+                calculateCorrelationAttributes:
+                  type: array
+                  description: >
+                    Provides the ability to present the attribute that is
+                    responsible for the investigated access, based on defined
+                    correlation attributes. according to the
+
+
+                    · entityType
+
+
+                    · entityAttribute
+
+
+                    · resourceAttribute
+                  items: {}
+                operationalFilters:
+                  type: array
+                  description: >-
+                    These operational filters should affect the Runtime behavior and results by applying additional filtering which is not directly related to Authorization logic.
+                  items:
+                    type: object
+                    oneOf:
+                      - $ref: '#/components/schemas/identitySourcesFilterByIDs'
+                    discriminator:
+                      propertyName: filterType
+
+              required:
+                - clientId
+                - clientSecret
+                - asset
+            examples:
+              User List request:
+                value:
+                  clientId: string
+                  clientSecret: string
+                  asset:
+                    resourceType: Account US
+                    path: Transfer US 5000
+                    actions:
+                      - Access
+                    assetAttribute:
+                      attribute_1:
+                        - string
+                      attribute_2:
+                        - string
+                  contextData:
+                    string:
+                      - string
+                  environment:
+                    string:
+                      - string
+                  remoteIp: string
+                  timeZoneOffset: 0
+                  entityTypes:
+                    - string
+                  includeContext: false
+                  includeAccessPolicy: false
+                  includeAsset: false
+                  includeInActiveIdentities: false
+                  includeIdentityAttributes: false
+                  accessTokenFormat: JSON
+                  useCache: true
+                  calculateCorrelationAttributes:
+                    - string
+        description: ''
+      description: >-
+        The User List API call is an open-ended question for a specific Asset.
+        It returns the list of users, their associated attributes and which
+        action they are allowed to perform on a specific Asset.   
+
+
+        Note: The User List end point is used primarily for reporting data.
+        There are time and amount constraints based on your identity sources.
+
+        <h3>Notice</h3>When accessing the Authorization APIs, the URL
+        base/prefix, according to your PlainID PDP Location<li><b>United States
+        Cloud PDP</b> - `https://tenant-name.us1.plainid.io`</li><li><b>Canadian
+        Cloud PDP</b> - `https://tenant-name.ca1.plainid.io`</li><li><b>European
+        Cloud PDP</b> - `https://tenant-name.eu1.plainid.io`</li><li><b>Local PAA</b> - `https://your-paa.acme.local`</li>
+    parameters: []
+
+components:
+  schemas:
+    operationalFilter:
+      type: object
+      required:
+      - filterType
+      properties:
+        filterType:
+          type: string
+      discriminator:
+        propertyName: filterType
+
+    identitySourcesFilterByIDs: # "identitySourcesFilterByIDs" is a value for the filterType property (the discriminator value)
+      allOf: # Combines the main `operationalFilter` schema with `identitySourcesFilterByIDs`-specific properties
+        - $ref: '#/components/schemas/operationalFilter'
+        - type: object
+          # all other properties specific to a `identitySourcesFilterByIDs`
+          properties:
+            filterProperties:
+              type: object
+              required:
+                - filterAction
+                - objectsList
+              properties:
+                filterAction:
+                  type: string
+                  enum: [INCLUDE, EXCLUDE]
+                objectsList:
+                  type: array
+                  items:
+                    type: string
+
+  examples: {}
+  securitySchemes: {}
+  responses:
+    generic_error:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            description: ''
+            type: object
+            properties:
+              errors:
+                type: array
+                uniqueItems: true
+                minItems: 1
+                items:
+                  required:
+                    - id
+                    - code
+                    - message
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    code:
+                      type: string
+                      minLength: 1
+                    message:
+                      type: string
+                      minLength: 1
+            required:
+              - errors
+            x-examples:
+              example-1:
+                errors:
+                  - id: XXXX
+                    code: YYYY
+                    message: Invalid request
+          examples:
+            generic_error_skeleton:
+              value:
+                errors:
+                  - id: XXXX
+                    code: YYYY
+                    message: Invalid request
+
+
+
+
+
